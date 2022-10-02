@@ -10,6 +10,8 @@
 // Sets the maximum payload size - CANFD can carry data up to 64 bytes, whereas
 // CAN 2.0 can only carry up to 8 bytes
 #define MAX_DATA_SIZE 8
+// The baud rate of the board
+#define BAUD 115200
 
 // PUBLIC VARIABLES ===========================================================
 // CAN_2515
@@ -27,18 +29,21 @@ int delaySize = 1000;
 // The different operations that can be performed
 enum Operation {Impersonation, Fuzzing, Replay, DoS, FrameDrop};
 // Change op to set the operation mode
-Operation op = DoS;
+Operation op = Impersonation;
 
 
 // ARDUINO FUNCTIONS ==========================================================
 
 void setup() {
-    SERIAL_PORT_MONITOR.begin(115200);
-    // wait for Serial
+    // Initialise the board at the specified baud
+    SERIAL_PORT_MONITOR.begin(BAUD);
+    // Wait for a serial connection
     while (!SERIAL_PORT_MONITOR);
-    // init can bus at a baudrate = 500k
+    // Initialise the CAN board at the specified speed
     if (CAN_OK != CAN.begin(CAN_500KBPS)) {
         SERIAL_PORT_MONITOR.println("CAN init fail");
+        SERIAL_PORT_MONITOR.flush();
+        return;
     } else {
         SERIAL_PORT_MONITOR.println("CAN init ok!");
     }
@@ -170,11 +175,11 @@ void generate_random_payload(byte &len, unsigned char *payload, bool ext,
         // Here a normal message is randomly generated.
         // Remember the condition max in the function random is exclusive to
         // the upper bound.
-#if MAX_DATA_SIZE > 8
+    #if MAX_DATA_SIZE > 8
         len = ext ? random(16) : random(9);
-#else
+    #else
         len = random(9);
-#endif
+    #endif
     }
 
     // Populate the payload (message buffer) with random values.
