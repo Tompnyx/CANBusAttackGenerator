@@ -37,7 +37,7 @@ To perform the different functionality of the program, five different operationa
 - **DoS** periodically sends an empty CAN message with a high arbitration value (low CAN ID number)
 - **FrameDrop** injects a message simultaneously with another ECU, exploiting a vulnerability in the arbitration phase of the CAN protocol 
 
-Note that the **DoS** and **FrameDrop** modes are partially implemented as of now. More information can be found in the [ITU-T's Guidelines for an intrusion detection system for in-vehicle networks](https://www.itu.int/rec/T-REC-X.1375-202010-I)
+Note that the **DoS** and **FrameDrop** modes are partially implemented as of now. More information can be found in the [ITU-T's Guidelines for an intrusion detection system for in-vehicle networks](https://www.itu.int/rec/T-REC-X.1375-202010-I).
 
 ### Development Environment
 The IDE [CLion](https://www.jetbrains.com/clion/) was used with the plugins [PlatformIO for CLion](https://plugins.jetbrains.com/plugin/13922-platformio-for-clion) and [Serial Port Monitor](https://plugins.jetbrains.com/plugin/8031-serial-port-monitor).
