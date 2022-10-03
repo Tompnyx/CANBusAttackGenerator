@@ -12,7 +12,7 @@ The following project has been created to perform attacks on a CAN bus, typical 
 
 Inspiration to format the outputted messages is taken from [HCRL](https://ocslab.hksecurity.net/welcome)'s work on their CAN Dataset for intrusion detection ([OTIDS](https://ocslab.hksecurity.net/Dataset/CAN-intrusion-dataset)). It is formatted in the following way:
 ```
-Timestamp:  [Time since initialised in milliseconds]    ID: [Arbitration or CAN ID] DLC:    [Length of the data package sent]   [The data package sent]
+[If the message was Sent/Received]: Timestamp:  [Time since initialised in milliseconds]    ID: [Arbitration or CAN ID] DLC:    [Length of the data package sent]   [The data package sent]
 ```
 
 ### How to run

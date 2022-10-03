@@ -1,5 +1,5 @@
 //
-// Created by tompnyx on 01/09/2022.
+// Created by Tompnyx on 01/09/2022.
 //
 #include "CANBusAttackGenerator.h"
 
@@ -27,9 +27,9 @@ unsigned long filterId = 0;
 int delaySize = 1000;
 
 // The different operations that can be performed
-enum Operation {Impersonation, Fuzzing, Replay, DoS, FrameDrop};
+enum Operation {Impersonation, Fuzzing, Replay, DoS, FrameDrop, Sniffing};
 // Change op to set the operation mode
-Operation op = Impersonation;
+Operation op = Sniffing;
 
 
 // ARDUINO FUNCTIONS ==========================================================
@@ -56,25 +56,25 @@ void loop() {
     switch (op) {
         case Impersonation:
             impersonation();
-            break;
         case Fuzzing:
             fuzzing();
             break;
         case Replay:
             replay();
-            break;
         case DoS:
             dos();
             break;
         case FrameDrop:
             frameDrop();
             break;
+        case Sniffing:
+            sniffing();
     }
 }
 
 // ATTACKS ====================================================================
 
-void impersonation() {
+[[noreturn]] void impersonation() {
     // Impersonation Message details. An example of an odometer message is
     // given below.
 
@@ -110,7 +110,7 @@ void fuzzing() {
     }
 }
 
-void replay() {
+[[noreturn]] void replay() {
     // The number of times to repeat the message
     int numRepeat = 5;
     unsigned long id = 0;
@@ -148,6 +148,15 @@ void dos() {
 
 void frameDrop() {
 
+}
+
+[[noreturn]] void sniffing() {
+    while (true) {
+        // Checks to see if there is incoming data
+        if (CAN_MSGAVAIL == CAN.checkReceive()) {
+            receive_can();
+        }
+    }
 }
 
 // CREATE MESSAGES ============================================================
@@ -254,21 +263,6 @@ void print_can_message_to_monitor(unsigned long canId,
 
 // SENDING AND RECEIVING ======================================================
 
-bool check_message_sent(int report) {
-    if (report == CAN_SENDMSGTIMEOUT) {
-        // CAN_SENDMSGTIMEOUT: A timeout has occurred
-        SERIAL_PORT_MONITOR.println("A CAN_SENDMSGTIMEOUT has occurred");
-    } else if (report == CAN_GETTXBFTIMEOUT) {
-        // CAN_GETTXBFTIMEOUT: The program has failed to get the next free
-        // buffer. This has most likely occurred due to the buffer being full.
-        SERIAL_PORT_MONITOR.println("A CAN_GETTXBFTIMEOUT has occurred");
-    } else {
-        // CAN_OK: everything is working
-        return true;
-    }
-    return false;
-}
-
 void send_can(bool sendRandom) {
     unsigned char payload[MAX_DATA_SIZE] = {0};
     unsigned long id = 0x00;
@@ -322,5 +316,40 @@ void send_can(unsigned long id, byte ext, byte rtr, byte len,
     if (check_message_sent(report)) {
         SERIAL_PORT_MONITOR.print("Sent Message:\t");
         print_can_message_to_monitor(id, len, payload);
+    }
+}
+
+bool check_message_sent(int report) {
+    if (report == CAN_SENDMSGTIMEOUT) {
+        // CAN_SENDMSGTIMEOUT: A timeout has occurred
+        SERIAL_PORT_MONITOR.println("A CAN_SENDMSGTIMEOUT has occurred");
+    } else if (report == CAN_GETTXBFTIMEOUT) {
+        // CAN_GETTXBFTIMEOUT: The program has failed to get the next free
+        // buffer. This has most likely occurred due to the buffer being full.
+        SERIAL_PORT_MONITOR.println("A CAN_GETTXBFTIMEOUT has occurred");
+    } else {
+        // CAN_OK: everything is working
+        return true;
+    }
+    return false;
+}
+
+void receive_can() {
+    unsigned char len = 0;
+    unsigned char buf[MAX_DATA_SIZE];
+    unsigned long canId = 0;
+
+    SERIAL_PORT_MONITOR.print("Received Msg:\t");
+    // Reads the data from the CAN message
+    // CAN ID being the CAN ID
+    // len being the length of the message (in bytes)
+    // buf being the buffer to store the message
+    CAN.readMsgBufID(&canId, &len, buf);
+
+    // Checks to see if filter is enabled, and if the message should be let
+    // through or not
+    if (filterId == 0 || filterId == canId) {
+        // Prints the canID to terminal
+        print_can_message_to_monitor(canId, len, buf);
     }
 }
